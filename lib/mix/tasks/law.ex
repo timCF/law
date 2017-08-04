@@ -70,6 +70,7 @@ defmodule Mix.Tasks.Law do
 
     create_file "README.md",  readme_template(assigns)
     create_file ".gitignore", gitignore_text()
+    create_file ".coverex_ignore.exs", coverex_ignore_template(assigns)
 
     if in_umbrella?() do
       create_file "mix.exs", mixfile_apps_template(assigns)
@@ -224,6 +225,21 @@ defmodule Mix.Tasks.Law do
   *.ez
   """
 
+  embed_template :coverex_ignore, """
+  [
+    #
+    # Modules from this list will be completely ignored by coverex tool.
+    # Please not abuse this file.
+    # Use it just in case of bad 3rd party auto-generated code.
+    #
+    # Examples:
+    #
+    # <%= @mod %>.Foo,
+    # <%= @mod %>.Foo.Bar,
+    #
+  ]
+  """
+
   embed_template :mixfile, """
   defmodule <%= @mod %>.Mixfile do
     use Mix.Project
@@ -232,7 +248,16 @@ defmodule Mix.Tasks.Law do
         app: :<%= @app %>,
         version: "0.1.0",
         elixir: "~> <%= @version %>",
+        build_embedded: false,
+        consolidate_protocols: true,
         start_permanent: Mix.env == :prod,
+        test_coverage: [
+          tool: Coverex.Task,
+          output: "./cover",
+          coveralls: true,
+          ignore_modules: Code.eval_file(".coverex_ignore.exs")
+        ],
+        dialyzer: [ignore_warnings: ".dialyzer_ignore"],
         deps: deps()
       ]
     end
@@ -245,6 +270,9 @@ defmodule Mix.Tasks.Law do
     # Run "mix help deps" to learn about dependencies.
     defp deps do
       [
+        {:credo, "~> 0.8", only: [:dev, :test], runtime: false},
+        {:coverex, "1.4.13", only: [:dev, :test], runtime: false},
+        {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
         # {:dep_from_hexpm, "~> 0.3.0"},
         # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"},
       ]
