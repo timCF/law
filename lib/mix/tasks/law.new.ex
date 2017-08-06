@@ -1,12 +1,12 @@
-defmodule Mix.Tasks.Law do
+defmodule Mix.Tasks.Law.New do
   use Mix.Task
 
   import Mix.Generator
 
-  @shortdoc "Creates a new Elixir project"
+  @shortdoc "Creates a new Elixir project with configured dev tools"
 
   @moduledoc """
-  Creates a new Elixir project.
+  Creates a new Elixir project with configured dev tools.
   It expects the path of the project as argument.
       mix new PATH [--sup] [--module MODULE] [--app APP] [--umbrella]
   A project at the given PATH will be created. The
@@ -22,11 +22,11 @@ defmodule Mix.Tasks.Law do
   A `--module` option can be given in order
   to name the modules in the generated code skeleton.
   ## Examples
-      mix new hello_world
+      mix law.new hello_world
   Is equivalent to:
-      mix new hello_world --module HelloWorld
+      mix law.new hello_world --module HelloWorld
   To generate an app with a supervision tree and an application callback:
-      mix new hello_world --sup
+      mix law.new hello_world --sup
   """
 
   @switches [
@@ -75,7 +75,7 @@ defmodule Mix.Tasks.Law do
       create_file "mix.exs", mixfile_apps_template(assigns)
     else
       create_file "mix.exs", mixfile_template(assigns)
-      create_file ".credo.exs", credo_template(assigns)
+      create_file ".credo.exs", credo_text()
       create_file ".coverex_ignore.exs", coverex_ignore_template(assigns)
       create_file ".dialyzer_ignore", dialyzer_ignore_text()
     end
@@ -97,7 +97,7 @@ defmodule Mix.Tasks.Law do
     """
     Your Mix project was created successfully.
     You can use "mix" to compile it, test it, and more:
-        #{cd_path(path)}mix test
+        #{cd_path(path)}mix law.keep
     Run "mix help" for more commands.
     """
     |> String.trim_trailing
@@ -116,7 +116,7 @@ defmodule Mix.Tasks.Law do
     create_file ".gitignore", gitignore_text()
     create_file "README.md", readme_template(assigns)
     create_file "mix.exs", mixfile_umbrella_template(assigns)
-    create_file ".credo.exs", credo_template(assigns)
+    create_file ".credo.exs", credo_text()
     create_file ".coverex_ignore.exs", coverex_ignore_template(assigns)
     create_file ".dialyzer_ignore", dialyzer_ignore_text()
 
@@ -130,8 +130,8 @@ defmodule Mix.Tasks.Law do
     Inside your project, you will find an apps/ directory
     where you can create and host many apps:
         #{cd_path(path)}cd apps
-        mix new my_app
-    Commands like "mix compile" and "mix test" when executed
+        mix law.new my_app
+    Commands like "mix compile" and "mix law.keep" when executed
     in the umbrella project root will automatically run
     for each application in the apps/ directory.
     """
@@ -251,7 +251,7 @@ defmodule Mix.Tasks.Law do
   ]
   """
 
-  embed_template :credo, """
+  embed_text :credo, """
   %{
     #
     # You can have as many configs as you like in the `configs:` field.
