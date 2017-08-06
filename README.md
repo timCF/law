@@ -13,7 +13,7 @@ mix compile && mix archive.build && mix archive.install
 # Usage
 ## mix law.new
 Command `mix law.new` generates new Elixir project. Compatible with all standard `mix new` task options, arguments and flags. Benefits:
-- `Credo` static code analysis tool will make your code pretty and consistent. Can be configured with `.coverex_ignore.exs` file.
+- `Credo` static code analysis tool will make your code pretty and consistent. Can be configured with `.credo.exs` file.
 - `Coverex` tool will help you to check test coverage for each module of new project. Can be configured with `.coverex_ignore.exs` file.
 - `Dialyzer` is static analysis tool for BEAM bytecode. Most useful feature of this tool is perfect type inference what will work in your project from-the-box without writing any explicit function specs or any other overhead. Can be configured with `.dialyzer_ignore` file.
 - `Xref` built-in ( in modern elixir compilers ) cross-reference tool. Your code will be checked for calls of undefined functions.
