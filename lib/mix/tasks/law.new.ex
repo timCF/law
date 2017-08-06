@@ -8,7 +8,7 @@ defmodule Mix.Tasks.Law.New do
   @moduledoc """
   Creates a new Elixir project with configured dev tools.
   It expects the path of the project as argument.
-      mix new PATH [--sup] [--module MODULE] [--app APP] [--umbrella]
+      mix law.new PATH [--sup] [--module MODULE] [--app APP] [--umbrella]
   A project at the given PATH will be created. The
   application name and module name will be retrieved
   from the path, unless `--module` or `--app` is given.
@@ -42,7 +42,7 @@ defmodule Mix.Tasks.Law.New do
 
     case argv do
       [] ->
-        Mix.raise "Expected PATH to be given, please use \"mix new PATH\""
+        Mix.raise "Expected PATH to be given, please use \"mix law.new PATH\""
       [path | _] ->
         app = opts[:app] || Path.basename(Path.expand(path))
         check_application_name!(app, !opts[:app])
@@ -78,6 +78,8 @@ defmodule Mix.Tasks.Law.New do
       create_file ".credo.exs", credo_text()
       create_file ".coverex_ignore.exs", coverex_ignore_template(assigns)
       create_file ".dialyzer_ignore", dialyzer_ignore_text()
+      create_file "pre-commit", pre_commit_text()
+      :ok = File.chmod("pre-commit", 0o755)
     end
 
     create_directory "config"
@@ -119,6 +121,8 @@ defmodule Mix.Tasks.Law.New do
     create_file ".credo.exs", credo_text()
     create_file ".coverex_ignore.exs", coverex_ignore_template(assigns)
     create_file ".dialyzer_ignore", dialyzer_ignore_text()
+    create_file "pre-commit", pre_commit_text()
+    :ok = File.chmod("pre-commit", 0o755)
 
     create_directory "apps"
 
@@ -234,6 +238,11 @@ defmodule Mix.Tasks.Law.New do
   Any dialyzer's error output lines putted to this text file will be completely ignored by dialyzer's type checks.
   Please not abuse this file, type checks are VERY important.
   Use this file just in case of bad 3rd party auto-generated code.
+  """
+
+  embed_text :pre_commit, """
+  #!/bin/sh
+  mix law.keep
   """
 
   embed_template :coverex_ignore, """
@@ -434,6 +443,7 @@ defmodule Mix.Tasks.Law.New do
         {:credo, "~> 0.8", only: [:dev, :test], runtime: false},
         {:coverex, "1.4.13", only: [:dev, :test], runtime: false},
         {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
+        {:law, github: "timCF/law", only: [:dev, :test], runtime: false},
         # {:dep_from_hexpm, "~> 0.3.0"},
         # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"},
       ]
@@ -516,6 +526,7 @@ defmodule Mix.Tasks.Law.New do
         {:credo, "~> 0.8", only: [:dev, :test], runtime: false},
         {:coverex, "1.4.13", only: [:dev, :test], runtime: false},
         {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
+        {:law, github: "timCF/law", only: [:dev, :test], runtime: false},
       ]
     end
   end
