@@ -9,5 +9,6 @@ defmodule Mix.Tasks.Law.Keep do
     _ = Mix.Task.run("credo", ["--strict"])
     _ = Mix.Task.run("test", ["--cover"])
     _ = Mix.Task.run("dialyzer", ["--halt-exit-status"])
+    _ = Mix.shell.info("Congratulations! It seems you project keeps the Law!")
   end
 end
