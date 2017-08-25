@@ -3,7 +3,7 @@ defmodule Law do
   Documentation for Law.
   """
   project_top_path = Mix.Project.deps_path() |> Path.join("..")
-  git_hooks_path = Path.join(project_top_path, ".git/hooks")
+  git_hooks_path = Path.join(project_top_path, ".git/hooks") |> Path.expand()
   case File.exists?(git_hooks_path) do
     true ->
       pre_commit_hook_path = Path.join(git_hooks_path, "pre-commit")
