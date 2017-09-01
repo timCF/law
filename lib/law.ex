@@ -15,20 +15,24 @@ defmodule Law do
         {:error, :eexist} -> Logger.info("pre-commit hook #{pre_commit_hook_path} already exists, do nothing")
         error ->
           """
+
           ************************************************
           Can not create symbolic link for pre-commit hook #{pre_commit_hook_path}
           because of error #{inspect error}
           ************************************************
+
           """
           |> raise
       end
     false ->
       """
+
       ************************************************
       It seems path #{git_hooks_path} is not exist.
       To keep the Law, your Elixir project should be in git repository.
       If you want just experiment with code locally, you can init repo using command 'git init'
       ************************************************
+
       """
       |> raise
   end
