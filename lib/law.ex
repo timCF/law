@@ -3,10 +3,11 @@ defmodule Law do
   Documentation for Law.
   """
   require Logger
-  project_top_path = Mix.Project.deps_path() |> Path.join("..")
+  project_top_path = Mix.Project.deps_path() |> Path.join("..") |> Path.expand()
   git_hooks_path = Path.join(project_top_path, ".git/hooks") |> Path.expand()
   case File.exists?(git_hooks_path) do
     true ->
+      {_, 0} = System.cmd("git",["submodule","update","--init","--recursive"], [cd: project_top_path])
       pre_commit_hook_path = Path.join(git_hooks_path, "pre-commit")
       case  project_top_path
             |> Path.join("pre-commit")
