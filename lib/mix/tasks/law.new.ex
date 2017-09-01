@@ -73,12 +73,13 @@ defmodule Mix.Tasks.Law.New do
 
     if in_umbrella?() do
       create_file "mix.exs", mixfile_apps_template(assigns)
+      create_file "coveralls.json", coveralls_in_umbrella_text()
     else
       create_file "mix.exs", mixfile_template(assigns)
+      create_file "coveralls.json", coveralls_simple_text()
       create_file ".credo.exs", credo_text()
-      create_file ".coverex_ignore.exs", coverex_ignore_template(assigns)
       create_file ".dialyzer_ignore", dialyzer_ignore_text()
-      create_file "pre-commit", pre_commit_text()
+      create_file "pre-commit", pre_commit_template([umbrella: false])
       :ok = File.chmod("pre-commit", 0o755)
     end
 
@@ -99,7 +100,7 @@ defmodule Mix.Tasks.Law.New do
     """
     Your Mix project was created successfully.
     You can use "mix" to compile it, test it, and more:
-        #{cd_path(path)}mix law.keep
+        #{cd_path(path)}./pre-commit
     Run "mix help" for more commands.
     """
     |> String.trim_trailing
@@ -119,9 +120,9 @@ defmodule Mix.Tasks.Law.New do
     create_file "README.md", readme_template(assigns)
     create_file "mix.exs", mixfile_umbrella_template(assigns)
     create_file ".credo.exs", credo_text()
-    create_file ".coverex_ignore.exs", coverex_ignore_template(assigns)
+    create_file "coveralls.json", coveralls_umbrella_text()
     create_file ".dialyzer_ignore", dialyzer_ignore_text()
-    create_file "pre-commit", pre_commit_text()
+    create_file "pre-commit", pre_commit_template([umbrella: true])
     :ok = File.chmod("pre-commit", 0o755)
 
     create_directory "apps"
@@ -135,7 +136,7 @@ defmodule Mix.Tasks.Law.New do
     where you can create and host many apps:
         #{cd_path(path)}cd apps
         mix law.new my_app
-    Commands like "mix compile" and "mix law.keep" when executed
+    Commands like "mix compile" when executed
     in the umbrella project root will automatically run
     for each application in the apps/ directory.
     """
@@ -240,24 +241,45 @@ defmodule Mix.Tasks.Law.New do
   Use this file just in case of bad 3rd party auto-generated code.
   """
 
-  embed_text :pre_commit, """
+  embed_template :pre_commit, """
   #!/bin/sh
-  mix law.keep
+  export MIX_ENV=test
+  mix deps.get &&
+  mix deps.compile &&
+  mix compile --warnings-as-errors &&
+  mix credo --strict &&
+  mix coveralls.html <%= (if @umbrella do ; "--umbrella" ; else ; "" ; end) %> &&
+  mix dialyzer --halt-exit-status &&
+  echo "Congratulations! It seems you project keeps the Law!"
   """
 
-  embed_template :coverex_ignore, """
-  [
-    #
-    # Modules from this list will be completely ignored by coverex tool.
-    # Please not abuse this file, test coverage is VERY important.
-    # Use this file just in case of bad 3rd party auto-generated code.
-    #
-    # Examples:
-    #
-    # <%= @mod %>.Foo,
-    # <%= @mod %>.Foo.Bar,
-    #
-  ]
+  embed_text :coveralls_simple, """
+  {
+    "coverage_options": {
+      "treat_no_relevant_lines_as_covered": false,
+      "minimum_coverage": 100
+    },
+    "skip_files": [
+
+    ]
+  }
+  """
+
+  embed_text :coveralls_umbrella, """
+  {
+    "coverage_options": {
+      "treat_no_relevant_lines_as_covered": false,
+      "minimum_coverage": 100
+    }
+  }
+  """
+
+  embed_text :coveralls_in_umbrella, """
+  {
+    "skip_files": [
+
+    ]
+  }
   """
 
   embed_text :credo, """
@@ -411,8 +433,6 @@ defmodule Mix.Tasks.Law.New do
   defmodule <%= @mod %>.Mixfile do
     use Mix.Project
     def project do
-      {coverex_ignore_modules, []} = Code.eval_file(".coverex_ignore.exs")
-      true = is_list(coverex_ignore_modules)
       [
         app: :<%= @app %>,
         version: "0.1.0",
@@ -420,11 +440,15 @@ defmodule Mix.Tasks.Law.New do
         build_embedded: false,
         consolidate_protocols: true,
         start_permanent: Mix.env == :prod,
-        test_coverage: [
-          tool: Coverex.Task,
-          output: "./cover",
-          coveralls: true,
-          ignore_modules: coverex_ignore_modules
+        test_coverage: [tool: ExCoveralls],
+        preferred_cli_env: [
+          "coveralls": :test,
+          "coveralls.travis": :test,
+          "coveralls.circle": :test,
+          "coveralls.semaphore": :test,
+          "coveralls.post": :test,
+          "coveralls.detail": :test,
+          "coveralls.html": :test
         ],
         dialyzer: [ignore_warnings: ".dialyzer_ignore"],
         elixirc_paths: elixirc_paths(Mix.env),
@@ -441,7 +465,7 @@ defmodule Mix.Tasks.Law.New do
     defp deps do
       [
         {:credo, "~> 0.8", only: [:dev, :test], runtime: false},
-        {:coverex, "1.4.13", only: [:dev, :test], runtime: false},
+        {:excoveralls, "~> 0.7", only: [:dev, :test], runtime: false},
         {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
         {:law, github: "timCF/law", only: [:dev, :test], runtime: false},
         # {:dep_from_hexpm, "~> 0.3.0"},
@@ -459,8 +483,6 @@ defmodule Mix.Tasks.Law.New do
   defmodule <%= @mod %>.Mixfile do
     use Mix.Project
     def project do
-      {coverex_ignore_modules, []} = Code.eval_file("../../.coverex_ignore.exs")
-      true = is_list(coverex_ignore_modules)
       [
         app: :<%= @app %>,
         version: "0.1.0",
@@ -472,11 +494,15 @@ defmodule Mix.Tasks.Law.New do
         build_embedded: false,
         consolidate_protocols: true,
         start_permanent: Mix.env == :prod,
-        test_coverage: [
-          tool: Coverex.Task,
-          output: "../../cover",
-          coveralls: true,
-          ignore_modules: coverex_ignore_modules
+        test_coverage: [tool: ExCoveralls],
+        preferred_cli_env: [
+          "coveralls": :test,
+          "coveralls.travis": :test,
+          "coveralls.circle": :test,
+          "coveralls.semaphore": :test,
+          "coveralls.post": :test,
+          "coveralls.detail": :test,
+          "coveralls.html": :test
         ],
         elixirc_paths: elixirc_paths(Mix.env),
         deps: deps()
@@ -514,6 +540,16 @@ defmodule Mix.Tasks.Law.New do
         start_permanent: Mix.env == :prod,
         deps: deps(),
         dialyzer: [ignore_warnings: ".dialyzer_ignore"],
+        test_coverage: [tool: ExCoveralls],
+        preferred_cli_env: [
+          "coveralls": :test,
+          "coveralls.travis": :test,
+          "coveralls.circle": :test,
+          "coveralls.semaphore": :test,
+          "coveralls.post": :test,
+          "coveralls.detail": :test,
+          "coveralls.html": :test
+        ],
       ]
     end
     # Dependencies listed here are available only for this
@@ -524,7 +560,7 @@ defmodule Mix.Tasks.Law.New do
     defp deps do
       [
         {:credo, "~> 0.8", only: [:dev, :test], runtime: false},
-        {:coverex, "1.4.13", only: [:dev, :test], runtime: false},
+        {:excoveralls, "~> 0.7", only: [:dev, :test], runtime: false},
         {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
         {:law, github: "timCF/law", only: [:dev, :test], runtime: false},
       ]
