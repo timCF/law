@@ -1,3 +1,7 @@
+# !!!DEPRECATED!!!
+
+**PROJECT IS DEPRECATED IN FAVOR OF [BOILEX](https://github.com/tim2CF/boilex)**
+
 # Law
 
 **Law** is generator of ultra-safe Elixir projects. **Law** is completely based on standard `mix new` task and it's just another way to create new Elixir project.
